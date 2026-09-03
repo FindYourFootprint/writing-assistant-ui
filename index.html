@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Writing Assistant</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 700px; margin: 40px auto; padding: 20px; line-height: 1.5; }
+    textarea, input { width: 100%; margin-bottom: 15px; padding: 8px; box-sizing: border-box; }
+    button { padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #1d4ed8; }
+    #result, #uploadStatus { background: #f3f4f6; padding: 15px; margin-top: 15px; border-radius: 6px; white-space: pre-wrap; }
+    hr { margin: 30px 0; border: none; border-top: 1px solid #e5e7eb; }
+  </style>
+</head>
+<body>
+  <h2>AI Writing Assistant (Style + Citations)</h2>
+
+  <label><strong>1. Upload Research Document (.docx):</strong></label>
+  <input type="file" id="fileInput" accept=".docx" />
+  <button onclick="uploadFile()">Index Research</button>
+  <div id="uploadStatus" style="display:none;"></div>
+
+  <hr>
+
+  <label><strong>2. Paste Writing Style Sample:</strong></label>
+  <textarea id="sample" rows="5" placeholder="Paste 2-3 paragraphs of your previously written text here..."></textarea>
+
+  <label><strong>3. Prompt / Topic:</strong></label>
+  <textarea id="prompt" rows="3" placeholder="What do you want the AI to write about?"></textarea>
+
+  <button onclick="generateDraft()">Generate Draft</button>
+
+  <div id="result" style="display:none;"></div>
+
+  <script>
+    // PASTE YOUR DIRECT HUGGING FACE URL HERE (No trailing slash at the end)
+    const BASE_URL = "https://sjdnh-writing-assistant-backend.static.hf.space";
+
+    async function uploadFile() {
+      const fileInput = document.getElementById('fileInput');
+      const statusDiv = document.getElementById('uploadStatus');
+      
+      if (!fileInput.files[0]) {
+        alert("Please select a .docx file first.");
+        return;
+      }
+
+      statusDiv.style.display = "block";
+      statusDiv.innerText = "Indexing research document...";
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+
+      try {
+        const res = await fetch(`${BASE_URL}/upload-research`, { method: 'POST', body: formData });
+        const data = await res.json();
+        statusDiv.innerText = data.message || "Document indexed!";
+      } catch (err) {
+        statusDiv.innerText = "Error uploading document: " + err.message;
+      }
+    }
+
+    async function generateDraft() {
+      const sample = document.getElementById('sample').value;
+      const prompt = document.getElementById('prompt').value;
+      const resultDiv = document.getElementById('result');
+
+      if (!sample || !prompt) {
+        alert("Please fill in both the writing sample and the prompt.");
+        return;
+      }
+
+      resultDiv.style.display = "block";
+      resultDiv.innerText = "Analyzing writing style and querying research sources...";
+
+      const formData = new FormData();
+      formData.append('writing_sample', sample);
+      formData.append('prompt', prompt);
+
+      try {
+        const res = await fetch(`${BASE_URL}/generate`, { method: 'POST', body: formData });
+        const data = await res.json();
+        resultDiv.innerText = data.output || "Draft generated!";
+      } catch (err) {
+        resultDiv.innerText = "Error generating draft: " + err.message;
+      }
+    }
+  </script>
+</body>
+</html>
